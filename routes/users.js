@@ -6,26 +6,24 @@ let db = new NeDB({
 });
 
 module.exports = (app) => {
-    app.get("/users", (req, res) => {
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "application/json");
-        res.json({
-            users: [
-                {
-                    name: 'Arthur Jorge',
-                    email: 'arthur@email.com',
-                    id: 1
-                },
-                {
-                    name: 'Laura Maria',
-                    email: 'laura@email.com',
-                    id: 2
-                }
-            ]
+    let route = app.route('/users');
+
+    route.get((req, res) => {
+        
+        // Em 'sort' a gente coloca o parâmetro:1 para deixar crescente, ou parâmetro:-1 para decrescente.
+        db.find({}).sort({name:1}).exec((err, users) => {
+            if (err) {
+                app.utils.error.send(err, req, res);
+            } else {
+                // res.status(200).json({users:users});
+                res.status(200).json({users}); // No ES6 a gente pode colocar assim e ele já entende a mesma
+                                               // coisa que a linha de cima.
+            }
         });
+
     });
 
-    app.post("/users", (req, res) => {
+    route.post((req, res) => {
         // Salvando no NeDB
         // db.insert(objeto-json-que-quero-salvar, (func-se-erro-ao-salvar, objeto-que-foi-salvo));
         // - Um exemplo de erro é se o _id passado for exatamente de algum que já esteja salvo do db.
@@ -33,15 +31,9 @@ module.exports = (app) => {
         //   ficando na constante _id.
         db.insert(req.body, (err, user) => {
             if (err) {
-                console.log(`error: ${err}`);
-                // Status 400 significa que houve algum erro por parte do usuário.
-                res.status(400).json(
-                    {
-                        error: err
-                    }
-                );
+                app.utils.error.send(err, req, res);
             } else {
-                res.status(200).json(user);
+                res.status(200).json({user});
             }
         });
     });
